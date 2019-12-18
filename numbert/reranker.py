@@ -71,17 +71,20 @@ class MonoBERT(Reranker):
         Path to PyTorch model directory
     model_type : str
         Type of pretrained Transformer model used
+    task_name : str
+        Task being tested (msmarco / treccar)
     max_seq_len : int
         Maximum length of input sequence fed into the model
     batch_size : int
         Batch size used while evaluating re-ranker
     '''
     def __init__(self, index_dir, model_dir = None, model_type="bert", 
-                 max_seq_len = 512, batch_size = 1):
+                 task_name = "msmarco", max_seq_len = 512, batch_size = 1):
         super().__init__(index_dir)
-        self.model, self.model_tokenizer, self.device = load_model(model_dir)
-        self.processor = processors["msmarco"]()
-        self.output_mode = output_modes["msmarco"]
+        self.model, self.model_tokenizer, self.device = load_model(model_dir, 
+            task_name=task_name)
+        self.processor = processors[task_name]()
+        self.output_mode = output_modes[task_name]
         self.model_type = model_type
         self.max_seq_len = max_seq_len
         self.batch_size = batch_size
@@ -188,6 +191,7 @@ class DuoBERT(MonoBERT):
     '''
     def __init__(self, index_dir, mono_model_dir, duo_model_dir= None,
                  mono_model_type="bert", duo_model_type="bert",
+                 task_name = "msmarco",
                  mono_max_seq_len = 512, duo_max_seq_len=512, 
                  mono_batch_size=1, duo_batch_size=1):
         raise NotImplementedError()

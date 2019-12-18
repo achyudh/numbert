@@ -430,7 +430,7 @@ class TreccarProcessor(DataProcessor):
                 text_b = convert_to_unicode(doc.content)
                 docid_dict[doc.docid] = text_b
                 examples.append(
-                    InputExample(guid=guid, text_a=text_a, text_b=text_b, label=str(0)))
+                    InputExample(guid=guid, text_a=text_a, text_b=text_b, label=str(0), len_gt_titles=42))
         return examples, docid_dict
 
     def get_labels(self):

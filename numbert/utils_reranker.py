@@ -69,6 +69,7 @@ def online_eval(model, tokenizer, device, features, batch_size = 1, model_type="
             inputs = {'input_ids':      batch[0],
                       'attention_mask': batch[1],
                       'labels':         batch[3]}
+
             if model_type != 'distilbert':
                 inputs['token_type_ids'] = batch[2] if model_type in ['bert', 'xlnet'] else None  # XLM, DistilBERT and RoBERTa don't use segment_ids
             batch_guids = batch[4]

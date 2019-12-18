@@ -181,6 +181,8 @@ def train(args, train_dataset, model, tokenizer, train_guid = None):
                 if args.model_type != 'distilbert':
                     inputs['token_type_ids'] = batch[2] if args.model_type in ['bert', 'xlnet'] else None  # XLM, DistilBERT and RoBERTa don't use segment_ids
                 batch_guids = batch[4]
+                if args.task_name == "treccar":
+                    batch_len_gt_titles = batch[5]
             outputs = model(**inputs)
             loss = outputs[0]  # model outputs are always tuple in transformers (see doc)
             
