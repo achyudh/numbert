@@ -231,9 +231,9 @@ class MsmarcoProcessor(DataProcessor):
 
     def get_train_examples(self, data_dir, is_qrels = None):
         """See base class."""
-
+        queries = self.load_queries(os.path.join(data_dir, "queries.train.tsv"))
         return self._create_examples_train_triples(self.load_train_triples(
-                os.path.join(data_dir,"triples.train.small.tsv")),
+                os.path.join(data_dir,"triples.train.micro.tsv")), queries,
                 "train")
 
     def get_train_examples_old(self, data_dir, is_qrels = True):
@@ -290,15 +290,20 @@ class MsmarcoProcessor(DataProcessor):
         """See base class."""
         return ["0", "1"]
 
-    def _create_examples_train_triples(self, data, set_type):
+    def _create_examples_train_triples(self, data, queries, set_type):
         """Creates examples for the training triples."""
         examples = []
         for (i, triple) in enumerate(data):
-            query, doc_p, doc_n = triple
+            query_id, doc_p_id, doc_n_id = triple
+            query = queries[query_id]
+            doc_p = self.collection[doc_p_id]
+            doc_n = self.collection[doc_n_id]
+
             text_a = convert_to_unicode(query)
             labels = [1, 0]
-            for doc_ind, doc in enumerate([doc_p, doc_n]):
-                guid = "%s-%s-%s-%s" % (set_type, i, doc_ind, doc_ind)
+            for doc_ind, doc_t in enumerate(((doc_p_id, doc_p), (doc_n_id, doc_n))):
+                doc_id, doc = doc_t
+                guid = "%s-%s-%s-%s" % (set_type, query_id, doc_ind, doc_id)
                 text_b = convert_to_unicode(doc)
                 examples.append(
                     InputExample(guid=guid, text_a=text_a, text_b=text_b, label=str(labels[doc_ind]))) 

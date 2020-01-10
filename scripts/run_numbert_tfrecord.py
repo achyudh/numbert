@@ -58,9 +58,9 @@ try:# old transformers remove
 except:
     from transformers import get_linear_schedule_with_warmup
 
-from numbert.utils.utils_numbert import (compute_metrics, convert_examples_to_features,
-                        output_modes, processors)  
-from numbert.utils.data_utils import tf_dl 
+from numbert_custom.utils.utils_numbert import (compute_metrics, convert_examples_to_features,
+                                                output_modes, processors)
+from numbert_custom.utils.data_utils import tf_dl
 
 import tensorflow as tf
 
@@ -248,10 +248,11 @@ def evaluate(args, model, tokenizer, prefix=""):
     log_softmax = torch.nn.LogSoftmax()
     eval_task_names = ("mnli", "mnli-mm") if args.task_name == "mnli" else (args.task_name,)
     eval_outputs_dirs = (args.output_dir, args.output_dir + '-MM') if args.task_name == "mnli" else (args.output_dir,)
+    predict_file = open('logits_train.tsv', 'w')
 
     results = {}
     for eval_task, eval_output_dir in zip(eval_task_names, eval_outputs_dirs):
-        eval_dataset, eval_guid = load_and_cache_examples(args, eval_task, tokenizer, evaluate=True)
+        eval_dataset, eval_guid = load_and_cache_examples(args, eval_task, tokenizer, evaluate=False)
 
         if not os.path.exists(eval_output_dir) and args.local_rank in [-1, 0]:
             os.makedirs(eval_output_dir)
@@ -315,6 +316,16 @@ def evaluate(args, model, tokenizer, prefix=""):
                         batch_len_gt_titles = batch[5]
                 outputs = model(**inputs)
                 tmp_eval_loss, logits = outputs[:2]
+
+                batch_labels = batch['labels']
+                batch_logits = logits.cpu().detach().numpy()
+                batch_lguids = list(map(lambda x: tuple(re.split(r'-', eval_guid[x])), batch_guids.detach().cpu()))
+                batch_doc_ids = [x[3] for x in batch_lguids]
+                batch_query_ids = [x[1] for x in batch_lguids]
+                for label, logit, doc_id, query_id in zip(batch_labels, batch_logits, batch_doc_ids, batch_query_ids):
+                    predict_file.write('{}\t{}\t{}\t{}\n'.format(label.item(), list(logit), query_id, doc_id))
+                predict_file.flush()
+
                 eval_loss += tmp_eval_loss.mean().item()
             nb_eval_steps += 1
             log_logits = log_softmax(logits)
@@ -394,6 +405,7 @@ def evaluate(args, model, tokenizer, prefix=""):
                 logger.info("  %s = %s", key, str(result[key]))
                 writer.write("%s = %s\n" % (key, str(result[key])))
 
+    predict_file.close()
     return results
 
 
